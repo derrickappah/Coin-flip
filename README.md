@@ -13,7 +13,7 @@ A web-based coin flip application that displays a 3D coin animation using Three.
 - **Responsive Design**: Adapts to various screen sizes, with a fixed 300x300px canvas for the coin animation.
 
 ## Demo
-[Insert link to live demo if hosted, e.g., on GitHub Pages or a web server]
+[https://derrickappah.github.io/Coin-flip/]
 
 ## Prerequisites
 - A modern web browser (e.g., Chrome, Firefox, Safari, Edge) with JavaScript enabled.
@@ -148,7 +148,7 @@ SOFTWARE.
 Contributions are welcome! Please submit a pull request or open an issue on the repository for bug reports, feature requests, or improvements.
 
 ## Contact
-For questions or feedback, contact [Your Name or Email] or open an issue on the repository.
+For questions or feedback, contact [derrick.appah.dev@gmail.com] or open an issue on the repository.
 
 ---
 
@@ -159,4 +159,3 @@ For questions or feedback, contact [Your Name or Email] or open an issue on the 
 - **Assets**: If you host the OBJ, textures, or audio files locally, update the README to reflect the local paths and setup instructions.
 - **Improvements**: If you implement any suggested improvements (e.g., loading spinner, new audio), update the "Features" and "Future Improvements" sections.
 
-If you need help with hosting, adding a specific feature (e.g., loading spinner), or modifying the README (e.g., adding a demo link or specific license), let me know! You can also provide details about your project setup (e.g., local vs. hosted assets) for more tailored instructions.
