@@ -24,7 +24,7 @@ A web-based coin flip application that displays a 3D coin animation using Three.
 1. **Clone or Download**:
    - Clone the repository or download the `index.html` file and associated assets (OBJ model and textures, if hosted locally).
    ```bash
-   git clone <repository-url>
+   git clone https://derrickappah.github.io/Coin-flip/
    ```
 
 2. **File Structure**:
