@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+  <link
+    rel="stylesheet"
+    as="style"
+    onload="this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900&amp;family=Space+Grotesk%3Awght%40400%3B500%3B700"
+  />
+  <title>Coin Flip</title>
+  <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    .coin-canvas {
+      width: 100%;
+      max-width: 300px;
+      height: 300px;
+      margin: 0 auto;
+    }
+    .bg-coin {
+      background-color: #202020;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/loaders/OBJLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/OBJLoader.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div
+    class="relative flex size-full min-h-screen flex-col bg-coin justify-between group/design-root overflow-x-hidden"
+    style='font-family: "Space Grotesk", "Noto Sans", sans-serif;'
+  >
+    <div>
+      <div class="flex items-center bg-coin p-4 pb-2 justify-between">
+        <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pl-12 pr-12">Coin Flip</h2>
+      </div>
+      <h1 class="text-white tracking-tight text-[32px] font-bold leading-tight px-4 text-center pb-3 pt-6">Flip a Coin</h1>
+      <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">Tap the button below to flip a coin and see the result.</p>
+      <div class="flex justify-center mt-6">
+        <canvas id="coinCanvas" class="coin-canvas"></canvas>
+      </div>
+      <div class="flex justify-center mt-4">
+        <div id="coinResult" class="text-white text-2xl font-bold" aria-live="polite">Result: ?</div>
+      </div>
+    </div>
+    <div>
+      <div class="flex px-4 py-3 justify-center">
+        <button
+          id="flipButton"
+          class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-[#0d78f2] text-slate-50 text-base font-bold leading-normal tracking-[0.015em]"
+        >
+          <span class="truncate">Flip</span>
+        </button>
+      </div>
+      <div class="h-5 bg-coin"></div>
+    </div>
+  </div>
+
+  <!-- Audio elements for sound effects -->
+  <audio id="coinFlipSound" src="https://assets.mixkit.co/sfx/preview/mixkit-dice-rolling-777.mp3"></audio>
+  <audio id="buttonClickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-modern-click-1118.mp3"></audio>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+    import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+
+    // DOM elements
+    const flipButton = document.getElementById('flipButton');
+    const coinCanvas = document.getElementById('coinCanvas');
+    const coinResult = document.getElementById('coinResult');
+    const coinFlipSound = document.getElementById('coinFlipSound');
+    const buttonClickSound = document.getElementById('buttonClickSound');
+
+    // Adjust volume
+    coinFlipSound.volume = 0.5;
+    buttonClickSound.volume = 0.3;
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x202020);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(50, coinCanvas.clientWidth / coinCanvas.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 4); // Moved camera farther back for smaller appearance
+    camera.lookAt(0, 0, 0);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ canvas: coinCanvas, antialias: true });
+    renderer.setSize(coinCanvas.clientWidth, coinCanvas.clientHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enabled = false;
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    keyLight.position.set(5, 5, 5);
+    keyLight.castShadow = true;
+    scene.add(keyLight);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    fillLight.position.set(-4, 2, 5);
+    scene.add(fillLight);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    rimLight.position.set(0, 3, -5);
+    scene.add(rimLight);
+
+    // Textures
+    const textureLoader = new THREE.TextureLoader();
+    let aoMap, normalMap;
+    try {
+      aoMap = textureLoader.load('T_Quarter_AO.jpg', () => console.log('AO texture loaded'), undefined, (err) => console.error('Error loading AO texture:', err));
+      normalMap = textureLoader.load('T_Quarter_Normal.jpg', () => console.log('Normal texture loaded'), undefined, (err) => console.error('Error loading Normal texture:', err));
+    } catch (err) {
+      console.error('Texture loading failed:', err);
+    }
+
+    // Load OBJ
+    let coin;
+    const loader = new OBJLoader();
+    loader.load(
+      '00306_Quarter_SKFB.obj',
+      (object) => {
+        console.log('OBJ model loaded');
+        coin = object;
+
+        coin.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({
+              map: aoMap || null,
+              normalMap: normalMap || null,
+              metalness: 0.9,
+              roughness: 0.25,
+              color: aoMap ? 0xffffff : 0xaaaaaa
+            });
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
+        const box = new THREE.Box3().setFromObject(coin);
+        const center = box.getCenter(new THREE.Vector3());
+        coin.position.sub(center);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const scaleFactor = 3 / size; // Reduced scale for smaller coin
+        coin.scale.multiplyScalar(scaleFactor);
+
+        scene.add(coin);
+      },
+      (progress) => console.log(`Loading OBJ: ${(progress.loaded / progress.total * 100).toFixed(2)}%`),
+      (err) => {
+        console.error('Error loading OBJ model:', err);
+        const fallbackGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const fallbackMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+        coin = new THREE.Mesh(fallbackGeometry, fallbackMaterial);
+        coin.castShadow = true;
+        coin.receiveShadow = true;
+        scene.add(coin);
+      }
+    );
+
+    // Flip animation
+    let flipping = false;
+    let spinSpeedX = 0;
+    let spinSpeedY = 0;
+    let targetQuaternion = new THREE.Quaternion();
+    let settling = false;
+    let isHeads = true;
+
+    // Play audio with error handling
+    function playAudio(audio) {
+      audio.currentTime = 0;
+      audio.play().catch(error => {
+        console.error(`${audio.id} failed to play:`, error);
+      });
+    }
+
+    // Trigger vibration
+    function triggerVibration() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 50, 100]);
+      } else {
+        console.log('Vibration API not supported on this device/browser');
+      }
+    }
+
+    function flipCoin() {
+      if (!coin || flipping) return;
+      flipping = true;
+      flipButton.disabled = true;
+      coinResult.textContent = 'Result: ?';
+
+      // Play button click sound and trigger vibration
+      playAudio(buttonClickSound);
+      triggerVibration();
+
+      spinSpeedX = Math.random() * 0.5 + 0.3;
+      spinSpeedY = Math.random() * 0.5;
+      isHeads = Math.random() > 0.5;
+
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      const coinNormal = new THREE.Vector3(0, 0, -1); // Corrected for Heads on negative Z
+      const targetDirection = isHeads ? cameraDirection.clone() : cameraDirection.clone().negate();
+
+      const quaternion = new THREE.Quaternion();
+      quaternion.setFromUnitVectors(coinNormal, targetDirection);
+      targetQuaternion.copy(quaternion);
+
+      playAudio(coinFlipSound);
+
+      console.log(`Flipping coin, isHeads: ${isHeads}, targetDirection: ${targetDirection.x.toFixed(2)}, ${targetDirection.y.toFixed(2)}, ${targetDirection.z.toFixed(2)}`);
+
+      setTimeout(() => {
+        flipping = false;
+        settling = true;
+        setTimeout(() => {
+          settling = false;
+          flipButton.disabled = false;
+          coinResult.textContent = `Result: ${isHeads ? 'Heads' : 'Tails'}`;
+          console.log(`Final result: ${isHeads ? 'Heads' : 'Tails'}, quaternion: ${coin.quaternion.x.toFixed(2)}, ${coin.quaternion.y.toFixed(2)}, ${coin.quaternion.z.toFixed(2)}, ${coin.quaternion.w.toFixed(2)}`);
+        }, 500);
+      }, 1500);
+    }
+
+    flipButton.addEventListener('click', flipCoin);
+
+    // Animate
+    function animate() {
+      requestAnimationFrame(animate);
+      if (flipping && coin) {
+        coin.rotation.x += spinSpeedX;
+        coin.rotation.y += spinSpeedY;
+        spinSpeedX *= 0.98;
+        spinSpeedY *= 0.98;
+      } else if (settling && coin) {
+        coin.quaternion.slerp(targetQuaternion, 0.1);
+        spinSpeedY *= 0.98;
+        coin.rotation.y += spinSpeedY;
+      }
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      const canvasWidth = coinCanvas.clientWidth;
+      const canvasHeight = coinCanvas.clientHeight;
+      camera.aspect = canvasWidth / canvasHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(canvasWidth, canvasHeight);
+    });
+  </script>
+</body>
+</html>
