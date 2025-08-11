@@ -119,7 +119,6 @@ A web-based coin flip application that displays a 3D coin animation using Three.
 - Optimize OBJ model loading for faster performance (e.g., use a lower-polygon model).
 
 ## License
-[Insert license, e.g., MIT License]
 ```
 MIT License
 
